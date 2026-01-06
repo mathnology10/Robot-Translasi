@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot Star Collector</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: auto;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    .game-wrapper {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      overflow-y: auto;
+    }
+
+    .game-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 100%;
+      margin: auto;
+    }
+
+    .game-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .game-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #2d3748;
+      margin: 0 0 8px 0;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      margin: 16px 0;
+      background: #e2e8f0;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .grid-cell {
+      aspect-ratio: 1;
+      background: #ffffff;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .grid-cell.obstacle {
+      background: #2d3748;
+    }
+
+    .grid-cell.robot {
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .grid-cell.star {
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    .code-input-section {
+      margin-bottom: 16px;
+    }
+
+    .code-input-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 6px;
+    }
+
+    .code-input-help {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .code-input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-family: 'Courier New', monospace;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+
+    .code-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .start-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+    }
+
+    .start-btn:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .start-btn:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .feedback-message {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      text-align: center;
+      display: none;
+    }
+
+    .feedback-message.show {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .feedback-message.success {
+      background: #c6f6d5;
+      color: #22543d;
+      border: 2px solid #48bb78;
+    }
+
+    .feedback-message.error {
+      background: #fed7d7;
+      color: #742a2a;
+      border: 2px solid #f56565;
+    }
+
+
+
+    .reset-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      background: #48bb78;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px rgba(72, 187, 120, 0.3);
+    }
+
+    .reset-btn:hover {
+      background: #38a169;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(72, 187, 120, 0.4);
+    }
+
+    .mode-toggle-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      background: #ed8936;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px rgba(237, 137, 54, 0.3);
+      margin-bottom: 10px;
+    }
+
+    .mode-toggle-btn:hover {
+      background: #dd6b20;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(237, 137, 54, 0.4);
+    }
+
+    .edit-instructions {
+      background: #fef5e7;
+      border-left: 4px solid #ed8936;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .edit-instructions.show {
+      display: block;
+    }
+
+    .edit-instructions h3 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+      color: #2d3748;
+      font-weight: 700;
+    }
+
+    .edit-instructions p {
+      margin: 3px 0;
+      font-size: 13px;
+      color: #4a5568;
+      line-height: 1.4;
+    }
+
+    .grid-cell.editable {
+      cursor: pointer;
+    }
+
+    .grid-cell.editable:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .win-message {
+      text-align: center;
+      padding: 16px;
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .win-message.show {
+      display: block;
+    }
+
+    .win-message h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #2d3748;
+      font-weight: 800;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (min-width: 640px) {
+      .game-wrapper {
+        padding: 32px 24px;
+        justify-content: center;
+      }
+
+      .game-container {
+        padding: 32px;
+      }
+
+      .game-header {
+        margin-bottom: 24px;
+      }
+
+      .game-title {
+        font-size: 36px;
+        margin-bottom: 16px;
+      }
+
+      .grid-container {
+        gap: 8px;
+        margin: 24px 0;
+        padding: 16px;
+        border-radius: 16px;
+      }
+
+      .grid-cell {
+        font-size: 32px;
+        border-radius: 8px;
+      }
+
+      .code-input-section {
+        margin-bottom: 24px;
+      }
+
+      .code-input-label {
+        font-size: 16px;
+        margin-bottom: 8px;
+      }
+
+      .code-input-help {
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+
+      .code-input {
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+
+      .start-btn, .reset-btn, .mode-toggle-btn {
+        padding: 16px;
+        font-size: 18px;
+        border-radius: 12px;
+      }
+
+      .mode-toggle-btn {
+        margin-bottom: 12px;
+      }
+
+      .feedback-message {
+        padding: 16px;
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+
+      .edit-instructions {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      .edit-instructions h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
+      }
+
+      .edit-instructions p {
+        font-size: 14px;
+        margin: 4px 0;
+      }
+
+      .win-message {
+        padding: 24px;
+        border-radius: 16px;
+        margin-bottom: 16px;
+      }
+
+      .win-message h2 {
+        font-size: 28px;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div class="game-wrapper h-full">
+   <div class="game-container">
+    <div class="game-header">
+     <h1 class="game-title" id="gameTitle">Robot Star Collector</h1>
+    </div>
+    <div class="win-message" id="winMessage">
+     <h2 id="winText">Selamat! Kamu Menang! 🎉</h2>
+    </div>
+    <div class="feedback-message" id="feedbackMessage"></div>
+    <div class="edit-instructions" id="editInstructions">
+     <h3>Mode Edit Aktif</h3>
+     <p>🤖 Klik sel kosong untuk menaruh robot</p>
+     <p>⭐ Klik sel kosong untuk menaruh bintang</p>
+     <p>🧱 Klik sel kosong untuk menaruh rintangan</p>
+     <p>❌ Klik objek untuk menghapusnya</p>
+    </div>
+    <div class="grid-container" id="grid"></div>
+    <div class="code-input-section" id="codeInputSection"><label for="codeInput" class="code-input-label">Masukkan Kode Gerakan:</label>
+     <div class="code-input-help">
+      Contoh: <strong>x+5;y-2</strong> (5 langkah kanan, 2 langkah bawah)<br>
+       x+ = kanan, x- = kiri, y+ = atas, y- = bawah
+     </div><input type="text" id="codeInput" class="code-input" placeholder="x+5;y-2" aria-label="Code Input"> <button class="start-btn" id="startBtn">Mulai Gerakan</button>
+    </div><button class="mode-toggle-btn" id="modeToggleBtn">Mode Edit: Taruh Rintangan</button> <button class="reset-btn" id="resetBtn">Mulai Ulang</button>
+    <div style="text-align: center; margin-top: 24px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+     <p style="font-size: 18px; font-weight: 800; color: #667eea; margin: 0; letter-spacing: 2px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">MATHNOLOGY</p>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      game_title: "Robot Translasi",
+      win_message: "Selamat! Kamu Menang! 🎉",
+      reset_button_text: "Mulai Ulang",
+      background_color: "#667eea",
+      surface_color: "#ffffff",
+      text_color: "#2d3748",
+      primary_action_color: "#667eea",
+      secondary_action_color: "#48bb78"
+    };
+
+    const GRID_SIZE = 6;
+    const ROBOT = '🤖';
+    const STAR = '⭐';
+    const OBSTACLE = '🧱';
+
+    let robotPos = { x: 0, y: 0 };
+    let initialRobotPos = { x: 0, y: 0 };
+    let starPos = { x: 5, y: 5 };
+    let obstacles = [
+      { x: 2, y: 1 },
+      { x: 3, y: 2 },
+      { x: 1, y: 3 },
+      { x: 4, y: 3 },
+      { x: 2, y: 4 }
+    ];
+    let gameWon = false;
+    let editMode = null; // null = play mode, 'obstacle' = taruh rintangan, 'robot' = taruh robot, 'star' = taruh bintang
+    let isExecuting = false;
+
+    function initGame() {
+      robotPos = { ...initialRobotPos };
+      gameWon = false;
+      document.getElementById('winMessage').classList.remove('show');
+      document.getElementById('feedbackMessage').classList.remove('show');
+      document.getElementById('codeInput').value = '';
+      renderGrid();
+      updateControls();
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          
+          if (editMode) {
+            cell.classList.add('editable');
+          }
+
+          if (x === robotPos.x && y === robotPos.y) {
+            cell.textContent = ROBOT;
+            cell.classList.add('robot');
+          } else if (x === starPos.x && y === starPos.y) {
+            cell.textContent = STAR;
+            cell.classList.add('star');
+          } else if (obstacles.some(obs => obs.x === x && obs.y === y)) {
+            cell.textContent = OBSTACLE;
+            cell.classList.add('obstacle');
+          }
+
+          cell.addEventListener('click', () => handleCellClick(x, y));
+
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    function handleCellClick(x, y) {
+      if (!editMode) return;
+
+      // Cek apakah sel berisi sesuatu
+      const hasRobot = (x === robotPos.x && y === robotPos.y);
+      const hasStar = (x === starPos.x && y === starPos.y);
+      const hasObstacle = obstacles.some(obs => obs.x === x && obs.y === y);
+
+      // Jika sel berisi sesuatu, hapus
+      if (hasRobot || hasStar || hasObstacle) {
+        if (hasRobot) {
+          robotPos = { x: -1, y: -1 }; // Taruh di luar grid
+          initialRobotPos = { x: -1, y: -1 };
+        } else if (hasStar) {
+          starPos = { x: -1, y: -1 }; // Taruh di luar grid
+        } else if (hasObstacle) {
+          obstacles = obstacles.filter(obs => !(obs.x === x && obs.y === y));
+        }
+      } else {
+        // Sel kosong, taruh sesuai mode
+        if (editMode === 'obstacle') {
+          obstacles.push({ x, y });
+        } else if (editMode === 'robot') {
+          robotPos = { x, y };
+          initialRobotPos = { x, y };
+        } else if (editMode === 'star') {
+          starPos = { x, y };
+        }
+      }
+
+      renderGrid();
+    }
+
+    function parseCode(code) {
+      // Parse kode seperti "x+5;y-2"
+      const parts = code.toLowerCase().replace(/\s/g, '').split(';');
+      let dx = 0, dy = 0;
+
+      for (let part of parts) {
+        if (!part) continue; // Skip empty parts
+        
+        // Parse x movement
+        if (part.startsWith('x')) {
+          const match = part.match(/x([+-]?\d+)/);
+          if (match) {
+            const numStr = match[1];
+            // Jika dimulai dengan + atau -, parse langsung
+            if (numStr.startsWith('+') || numStr.startsWith('-')) {
+              dx += parseInt(numStr);
+            } else {
+              // Jika hanya angka, anggap positif
+              dx += parseInt(numStr);
+            }
+          }
+        }
+        
+        // Parse y movement (y+ = ke atas, y- = ke bawah)
+        if (part.startsWith('y')) {
+          const match = part.match(/y([+-]?\d+)/);
+          if (match) {
+            const numStr = match[1];
+            // Jika dimulai dengan + atau -, parse langsung lalu balik tanda
+            if (numStr.startsWith('+')) {
+              dy -= parseInt(numStr.substring(1)); // y+ = ke atas (koordinat berkurang)
+            } else if (numStr.startsWith('-')) {
+              dy += parseInt(numStr.substring(1)); // y- = ke bawah (koordinat bertambah)
+            } else {
+              // Jika hanya angka, anggap positif (ke bawah)
+              dy += parseInt(numStr);
+            }
+          }
+        }
+      }
+
+      return { dx, dy };
+    }
+
+    function showFeedback(message, isSuccess) {
+      const feedback = document.getElementById('feedbackMessage');
+      feedback.textContent = message;
+      feedback.className = 'feedback-message show ' + (isSuccess ? 'success' : 'error');
+    }
+
+    async function executeCode() {
+      if (isExecuting || gameWon) return;
+
+      const codeInput = document.getElementById('codeInput').value.trim();
+      
+      if (!codeInput) {
+        showFeedback('❌ Kode tidak boleh kosong!', false);
+        return;
+      }
+
+      isExecuting = true;
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('feedbackMessage').classList.remove('show');
+
+      try {
+        // Parse setiap kode individual
+        const parts = codeInput.toLowerCase().replace(/\s/g, '').split(';').filter(p => p);
+        
+        if (parts.length === 0) {
+          showFeedback('❌ Tidak ada gerakan! Masukkan kode seperti x+2 atau y-1', false);
+          isExecuting = false;
+          document.getElementById('startBtn').disabled = false;
+          return;
+        }
+
+        const delay = 600;
+        let moveCount = 0;
+        const MAX_MOVES = 100; // Batasi maksimal gerakan
+
+        for (let part of parts) {
+          if (!part) continue;
+
+          let dx = 0, dy = 0;
+
+          // Parse x movement
+          if (part.startsWith('x')) {
+            const match = part.match(/x([+-]?\d+)/);
+            if (match) {
+              const numStr = match[1];
+              if (numStr.startsWith('+') || numStr.startsWith('-')) {
+                dx = parseInt(numStr);
+              } else {
+                dx = parseInt(numStr);
+              }
+            }
+          }
+          
+          // Parse y movement
+          if (part.startsWith('y')) {
+            const match = part.match(/y([+-]?\d+)/);
+            if (match) {
+              const numStr = match[1];
+              if (numStr.startsWith('+')) {
+                dy = -parseInt(numStr.substring(1));
+              } else if (numStr.startsWith('-')) {
+                dy = parseInt(numStr.substring(1));
+              } else {
+                dy = parseInt(numStr);
+              }
+            }
+          }
+
+          // Validasi kalau tidak ada gerakan
+          if (dx === 0 && dy === 0) continue;
+
+          // Batasi jumlah gerakan total
+          const totalSteps = Math.abs(dx) + Math.abs(dy);
+          if (moveCount + totalSteps > MAX_MOVES) {
+            showFeedback(`❌ Terlalu banyak gerakan! Maksimal ${MAX_MOVES} langkah.`, false);
+            isExecuting = false;
+            document.getElementById('startBtn').disabled = false;
+            return;
+          }
+          moveCount += totalSteps;
+
+          // Hitung posisi akhir untuk kode ini
+          const finalX = robotPos.x + dx;
+          const finalY = robotPos.y + dy;
+
+          // Cek apakah gerakan valid
+          if (finalX < 0 || finalX >= GRID_SIZE || finalY < 0 || finalY >= GRID_SIZE) {
+            showFeedback(`❌ Gagal! Robot keluar dari grid di kode: ${part}`, false);
+            isExecuting = false;
+            document.getElementById('startBtn').disabled = false;
+            return;
+          }
+
+          // Cek apakah melewati obstacle
+          const pathBlocked = checkPathForObstacles(robotPos.x, robotPos.y, dx, dy);
+          if (pathBlocked) {
+            showFeedback(`❌ Gagal! Robot menabrak rintangan di kode: ${part}`, false);
+            isExecuting = false;
+            document.getElementById('startBtn').disabled = false;
+            return;
+          }
+
+          // Animasi gerakan untuk kode ini
+          // Gerak horizontal dulu
+          for (let i = 0; i < Math.abs(dx); i++) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            robotPos.x += dx > 0 ? 1 : -1;
+            renderGrid();
+            
+            // Cek apakah mencapai bintang
+            if (robotPos.x === starPos.x && robotPos.y === starPos.y) {
+              gameWon = true;
+              document.getElementById('winMessage').classList.add('show');
+              showFeedback(`✅ Berhasil! Robot mencapai bintang!`, true);
+              document.getElementById('startBtn').disabled = true;
+              isExecuting = false;
+              return;
+            }
+          }
+
+          // Kemudian vertikal
+          for (let i = 0; i < Math.abs(dy); i++) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            robotPos.y += dy > 0 ? 1 : -1;
+            renderGrid();
+            
+            // Cek apakah mencapai bintang
+            if (robotPos.x === starPos.x && robotPos.y === starPos.y) {
+              gameWon = true;
+              document.getElementById('winMessage').classList.add('show');
+              showFeedback(`✅ Berhasil! Robot mencapai bintang!`, true);
+              document.getElementById('startBtn').disabled = true;
+              isExecuting = false;
+              return;
+            }
+          }
+        }
+
+        // Jika belum mencapai bintang setelah semua kode
+        if (!gameWon) {
+          showFeedback(`✅ Gerakan berhasil! Lanjutkan ke bintang.`, true);
+          document.getElementById('codeInput').value = '';
+        }
+
+      } catch (error) {
+        showFeedback('❌ Kode tidak valid! Gunakan format: x+5;y-2 atau x+2 atau y-3', false);
+        isExecuting = false;
+        document.getElementById('startBtn').disabled = false;
+        return;
+      }
+
+      isExecuting = false;
+      if (!gameWon) {
+        document.getElementById('startBtn').disabled = false;
+      }
+    }
+
+    function checkPathForObstacles(startX, startY, dx, dy) {
+      // Cek horizontal path
+      if (dx !== 0) {
+        const direction = dx > 0 ? 1 : -1;
+        for (let i = 1; i <= Math.abs(dx); i++) {
+          const checkX = startX + (i * direction);
+          // Pastikan masih dalam grid
+          if (checkX < 0 || checkX >= GRID_SIZE) continue;
+          if (obstacles.some(obs => obs.x === checkX && obs.y === startY)) {
+            return true;
+          }
+        }
+      }
+
+      // Cek vertical path dari posisi akhir horizontal
+      const midX = startX + dx;
+      if (dy !== 0) {
+        const direction = dy > 0 ? 1 : -1;
+        for (let i = 1; i <= Math.abs(dy); i++) {
+          const checkY = startY + (i * direction);
+          // Pastikan masih dalam grid
+          if (checkY < 0 || checkY >= GRID_SIZE) continue;
+          if (obstacles.some(obs => obs.x === midX && obs.y === checkY)) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
+    function toggleEditMode() {
+      const btn = document.getElementById('modeToggleBtn');
+      const instructions = document.getElementById('editInstructions');
+      const codeSection = document.getElementById('codeInputSection');
+
+      if (editMode === null) {
+        editMode = 'obstacle';
+        btn.textContent = 'Mode Edit: Taruh Rintangan 🧱';
+        instructions.classList.add('show');
+        codeSection.style.opacity = '0.5';
+        codeSection.style.pointerEvents = 'none';
+      } else if (editMode === 'obstacle') {
+        editMode = 'robot';
+        btn.textContent = 'Mode Edit: Taruh Robot 🤖';
+      } else if (editMode === 'robot') {
+        editMode = 'star';
+        btn.textContent = 'Mode Edit: Taruh Bintang ⭐';
+      } else if (editMode === 'star') {
+        editMode = null;
+        btn.textContent = 'Mode Edit: Taruh Rintangan';
+        instructions.classList.remove('show');
+        codeSection.style.opacity = '1';
+        codeSection.style.pointerEvents = 'auto';
+        initGame();
+      }
+
+      renderGrid();
+    }
+
+    function updateControls() {
+      const startBtn = document.getElementById('startBtn');
+      if (gameWon) {
+        startBtn.disabled = true;
+      }
+    }
+
+    async function onConfigChange(config) {
+      const titleElement = document.getElementById('gameTitle');
+      const winTextElement = document.getElementById('winText');
+      const resetBtnElement = document.getElementById('resetBtn');
+      const wrapperElement = document.querySelector('.game-wrapper');
+      const containerElement = document.querySelector('.game-container');
+      const textElements = document.querySelectorAll('.game-title, .win-message h2, .code-input-label');
+      const startBtn = document.getElementById('startBtn');
+      const resetBtn = document.getElementById('resetBtn');
+
+      titleElement.textContent = config.game_title || defaultConfig.game_title;
+      winTextElement.textContent = config.win_message || defaultConfig.win_message;
+      resetBtnElement.textContent = config.reset_button_text || defaultConfig.reset_button_text;
+
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryActionColor = config.primary_action_color || defaultConfig.primary_action_color;
+      const secondaryActionColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+
+      wrapperElement.style.background = `linear-gradient(135deg, ${backgroundColor} 0%, ${backgroundColor}dd 100%)`;
+      containerElement.style.background = `${surfaceColor}f2`;
+      
+      textElements.forEach(el => {
+        el.style.color = textColor;
+      });
+
+      startBtn.style.background = primaryActionColor;
+      resetBtn.style.background = secondaryActionColor;
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', initGame);
+    document.getElementById('modeToggleBtn').addEventListener('click', toggleEditMode);
+    document.getElementById('startBtn').addEventListener('click', executeCode);
+
+    // Allow Enter key to execute code
+    document.getElementById('codeInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        executeCode();
+      }
+    });
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.surface_color || defaultConfig.surface_color,
+              set: (value) => {
+                config.surface_color = value;
+                window.elementSdk.setConfig({ surface_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.primary_action_color || defaultConfig.primary_action_color,
+              set: (value) => {
+                config.primary_action_color = value;
+                window.elementSdk.setConfig({ primary_action_color: value });
+              }
+            },
+            {
+              get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+              set: (value) => {
+                config.secondary_action_color = value;
+                window.elementSdk.setConfig({ secondary_action_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["game_title", config.game_title || defaultConfig.game_title],
+          ["win_message", config.win_message || defaultConfig.win_message],
+          ["reset_button_text", config.reset_button_text || defaultConfig.reset_button_text]
+        ])
+      });
+    }
+
+    initGame();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b9eb14224c73bdd',t:'MTc2NzczODk2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
